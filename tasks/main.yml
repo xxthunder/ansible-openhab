@@ -26,7 +26,7 @@
     key_file: "/home/{{ system_user }}/.ssh/id_rsa"
     repo: "{{ openhab_repo }}"
     version: "{{ openhab_repo_branch }}"
-  when: openhab_repo #defaults to false for empty variables 
+  when: openhab_repo #defaults to false for empty variables
 
 - name: Create if necessary and set the permissions on the openHAB data folder
   file:
@@ -39,10 +39,10 @@
   become: True
 
 # openHAB docker image expects that certain folders exist, otherwise it will not start.
-# Since not all of them have to be versioned they might be missing from your repo, so 
+# Since not all of them have to be versioned they might be missing from your repo, so
 # lets check and add them:
 - name: Create missing folders for repo exists
-  file: 
+  file:
     path: "{{ item }}"
     state: directory
     owner: "{{ openhab_user }}"
@@ -54,12 +54,12 @@
     - "{{ openhab_home }}/userdata/persistence"
     - "{{ openhab_home }}/userdata/tmp"
   become: True
-  when: openhab_repo #defaults to false for empty variables 
+  when: openhab_repo #defaults to false for empty variables
 
 # In case of a fresh installation (means no repo) the three folders mapped
 # into the container have to exists, to be empty and to be owned by openhab
 - name: Create missing folders for a fresh installation
-  file: 
+  file:
     path: "{{ item }}"
     state: directory
     owner: "{{ openhab_user }}"
@@ -93,28 +93,26 @@
 
 - name: Pull/update the openHAB docker image
   tags: openhab
-  docker_container: 
-    detach: True
-    env:
-      CRYPTO_POLICY: unlimited
-      OPENHAB_HTTP_PORT: "8080"
-      OPENHAB_HTTPS_PORT: "8443"
-      EXTRA_JAVA_OPTS: "-Duser.timezone={{ openhab_timezone }}"
-    hostname: "{{ openhab_hostname }}"
-    image: openhab/openhab:{{ openhab_version }}
+  docker_container:
     name: openhab
+    image: openhab/openhab:{{ openhab_version }}
+    hostname: "{{ openhab_hostname }}"
+    state: started
+    pull: True
+    detach: True
     container_default_behavior: compatibility
     network_mode: host
-    pull: True
-    state: started
-    interactive: yes
     restart: False
-    restart_policy: always
-    tty: True
+    restart_policy: "always"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - "{{ openhab_home }}/conf:/openhab/conf"
       - "{{ openhab_home }}/userdata:/openhab/userdata"
       - "{{ openhab_home }}/addons:/openhab/addons"
+    env:
+      CRYPTO_POLICY: unlimited
+      OPENHAB_HTTP_PORT: "8080"
+      OPENHAB_HTTPS_PORT: "8443"
+      EXTRA_JAVA_OPTS: "-Duser.timezone={{ openhab_timezone }}"
   register: openhab_pulled
