@@ -101,11 +101,14 @@
     pull: yes
     detach: yes
     restart_policy: unless-stopped
-    ports:
-      # UI/REST
-      - "8443:8443"
-      # Language Server
-      - "5007:5007"
+    network_mode: host
+    # This breaks some functionality of Shelly Gen1 devices
+    # and VS Code openHAB extension
+    # ports:
+    #   # UI/REST
+    #   - "8443:8443"
+    #   # Language Server
+    #   - "5007:5007"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
