@@ -26,7 +26,7 @@
     key_file: "/home/{{ system_user }}/.ssh/id_rsa"
     repo: "{{ openhab_repo }}"
     version: "{{ openhab_repo_branch }}"
-  when: openhab_repo #defaults to false for empty variables
+  when: openhab_repo | default(false) | bool
 
 - name: Create if necessary and set the permissions on the openHAB data folder
   file:
@@ -54,7 +54,7 @@
     - "{{ openhab_home }}/userdata/persistence"
     - "{{ openhab_home }}/userdata/tmp"
   become: True
-  when: openhab_repo #defaults to false for empty variables
+  when: openhab_repo | default(false) | bool
 
 # In case of a fresh installation (means no repo) the three folders mapped
 # into the container have to exists, to be empty and to be owned by openhab
