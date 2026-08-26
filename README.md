@@ -1,9 +1,20 @@
 openhab
 =========
 
+> **Lineage.** This repository began as a fork of
+> [`fex01/ansible-openhab`](https://github.com/fex01/ansible-openhab) and has
+> permanently diverged: it is maintained under `xxthunder` on its own release
+> lineage and does not track upstream. Attribution to the original author, and
+> to rkoshak's post below, stands — this note is about lineage, not credit.
+>
+> Development conventions, testing and the release process are in
+> [AGENTS.md](AGENTS.md); work is tracked in [docs/backlog/](docs/backlog/).
+
+
 This role will set up an openHAB server as Docker container and is heavily inspired by [rkoshak](https://github.com/rkoshak)s post [Ansible Revisited](https://community.openhab.org/t/ansible-revisited/105754) in the [openHAB community](https://community.openhab.org).
 
-**Work In Progress**: While the role is already functional, molecule test are rudimentary / non existent.
+**Work In Progress**: `molecule/default` is rudimentary; the focused
+`molecule/git-seeding` scenario is the one that proves current behaviour.
 
 
 ### It will

@@ -1,0 +1,123 @@
+# AGENTS.md — AI Agent Guidelines for `ansible-role-openhab`
+
+## What this repo is
+
+An Ansible role that runs openHAB as a Docker container and seeds its
+configuration and runtime state from two git repositories. It is a standalone,
+reusable role: nothing in it may assume the maintainer's home lab.
+
+**It is consumed as a git submodule, pinned to a tag.** The consuming project
+mounts it at `roles/openhab`. The practical consequence is easy to forget and
+worth stating plainly: **a commit here changes nothing anywhere until the consumer's
+pin moves.** Merging to `main` is not deployment. A change is live only once a
+tag is cut and the parent advances its submodule to it.
+
+**Lineage.** This began as a fork of
+[`fex01/ansible-openhab`](https://github.com/fex01/ansible-openhab), itself
+inspired by [rkoshak](https://github.com/rkoshak)'s *Ansible Revisited*. The
+divergence is permanent — the `xxthunder` copy is not maintained as a fork and
+does not track upstream. Attribution stays; lineage does not.
+
+## This repo is public
+
+Nothing in it may name the maintainer's lab: host names, IP addresses, internal
+domains or URLs, the consuming project's name, personal or family names. This
+covers **prose, comments, examples and commit messages**, not just links and
+config. Write the generic form instead — "any Docker-capable host", "the
+consuming project" — which reads better anyway.
+
+Consumer backlog items are cited by bare ID (e.g. `HSH-067`), never as a link:
+an ID is opaque, a URL is not, and a link would be dead for most readers.
+
+This is "nothing in it may assume the maintainer's home lab" from above, stated
+where it can be checked before a push rather than noticed after one. Grep the
+branch — the working tree *and* every commit on it — before pushing, and read
+the grep's own exit status: a piped grep reports the pipe's status, not its own.
+
+## Backlog
+
+Work is tracked in `docs/backlog/` with the **`ARO-`** prefix, one file per item
+(`docs/backlog/aro-###.md`), indexed in `docs/backlog/README.md`. Every commit
+references an item — the `commit-msg` hook enforces it.
+
+Enable the hook after cloning (it is not automatic):
+
+```sh
+git config core.hooksPath .githooks
+```
+
+Format: `<type>(<scope>): <description> (ARO-###)`. Allowed types: `feat`, `fix`,
+`docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+
+## Git workflow
+
+Anything that changes what runs — tasks, defaults, templates, molecule — is
+developed on a short-lived feature branch and merged to `main` fast-forward only
+(`git merge --ff-only`). Pure backlog and documentation edits may go straight to
+`main`.
+
+## Testing
+
+Molecule is the test harness, and it needs Docker, which the consuming
+project's devcontainer does not provide. Until this repo has its own
+devcontainer ([ARO-001](docs/backlog/aro-001.md)), run scenarios on any
+Docker-capable host:
+
+```sh
+molecule test -s git-seeding
+```
+
+**`molecule/git-seeding`** covers the two-repo seeding contract against bare
+repositories created inside the container, so it needs no network, no git
+server and no credentials. It converges `tasks/git.yml` alone — never the whole
+role — so it needs no docker-in-docker for the openHAB container.
+
+**`molecule/default`** is vestigial and currently proves nothing (see
+[ARO-003](docs/backlog/aro-003.md)). Do not cite it as evidence.
+
+Static checks — always available, never sufficient:
+
+```sh
+yamllint -c .yamllint tasks/ defaults/ molecule/
+ansible-lint
+```
+
+`ansible-lint` is deliberately **not** in `.claude/settings.json`'s deny list.
+The consumer repo denies the whole `ansible*` glob to protect a vault; this repo
+has no vault, and linting a role is exactly the kind of thing an agent should be
+able to do here. Playbook execution against real infrastructure stays denied.
+
+## Releasing — RC first, then promote
+
+A change here is not "released" when it merges. Cut a **release candidate**
+first, let the consumer verify it against a real host, and only then promote:
+
+1. Tag `vX.Y.Z-rcN` at the fix commit, push it, and have the consumer bump its
+   pin to the RC.
+2. Verify against the real target — molecule plus whatever reboot-survival or
+   idempotence check the change warrants.
+3. Only on success, tag the final `vX.Y.Z` and re-point the consumer's pin.
+
+The RC keeps "pinned for testing" distinct from "released", so an unverified
+build is never blessed as a version.
+
+## Conventions
+
+- **Role variables** are prefixed `openhab_` and documented in
+  `defaults/main.yml` with a comment saying what they do and what empty means.
+- **Optional features default to off.** An empty string, not `null` — guards use
+  `| length > 0`, and `null | length` raises rather than returning 0.
+- **Never reference a credential on the managed host.** The role authenticates
+  to nothing in steady state; an earlier version passed `key_file` pointing at a
+  private key on the box, and that is precisely what was removed.
+- **KISS / YAGNI.** No variable, wrapper or knob without a current backlog item
+  needing it. One-time migration steps belong in the consumer's runbook, not in
+  role logic that then runs forever.
+- **Single responsibility per task file.** `tasks/git.yml` owns repository
+  wiring; `tasks/main.yml` orchestrates.
+
+## Definition of Done
+
+A change is done when the docs describing it are true again, in the same commit:
+the backlog item's criteria ticked, `defaults/main.yml` commented for any new
+variable, and `README.md` updated if the role's behaviour or interface changed.

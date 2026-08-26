@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Conventional commit message hook with backlog item reference enforcement
+# Format: <type>(<optional scope>): <description> (PREFIX-###[<letter>])
+# The optional lowercase letter suffix denotes a substory (e.g. HSH-028a).
+
+commit_msg_file="$1"
+commit_msg=$(head -n 1 "$commit_msg_file")
+
+# Skip merge commits and fixup/squash commits
+if echo "$commit_msg" | grep -qE "^Merge |^fixup! |^squash! "; then
+  exit 0
+fi
+
+# Validate conventional commit format with backlog reference
+if ! echo "$commit_msg" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+ \([A-Z]+-[0-9]+[a-z]?\)$"; then
+  echo "ERROR: Commit message does not follow conventional commit format."
+  echo ""
+  echo "Expected format:"
+  echo "  <type>(<scope>): <description> (PREFIX-###[<letter>])"
+  echo ""
+  echo "Examples:"
+  echo "  feat: seed conf/ and userdata/ from two repos (ARO-002)"
+  echo "  fix(molecule): drop the stale weareinteractive deps (ARO-003)"
+  echo "  docs: record the release policy (ARO-005)"
+  echo ""
+  echo "Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+  exit 1
+fi

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(ansible:*)",
+      "Bash(ansible-playbook:*)",
+      "Bash(ansible-vault:*)",
+      "Bash(ansible-inventory:*)"
+    ]
+  }
+}
